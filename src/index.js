@@ -37,7 +37,6 @@ const doSomethingWithTxn = (txn, standard, event_type) => {
     body.DCENTRAL_EVENT_API_KEY = process.env.DCENTRAL_EVENT_API_KEY
 
     console.log(txn, 'transation')
-    console.log(body, 'params')
 
     fetch(`${process.env.SEVERLESS_URL}/subscribe`, {
         method: 'post',
@@ -45,7 +44,7 @@ const doSomethingWithTxn = (txn, standard, event_type) => {
         headers: { 'Content-Type': 'application/json' }
     }).then(res => {
         if (!res.ok) {
-            throw new Error("Could not connect to serverless api.");
+            throw new Error("Error occured.");
         }
         return res.json();
     })

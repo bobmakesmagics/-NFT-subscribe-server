@@ -34,6 +34,7 @@ const doSomethingWithTxn = (txn, standard, event_type) => {
     const transaction_hash = txn.transactionHash
 
     const body = { standard, event_type, chain, transaction_hash };
+    body.DCENTRAL_EVENT_API_KEY = process.env.DCENTRAL_EVENT_API_KEY
 
     console.log(txn, 'transation')
     console.log(body, 'params')

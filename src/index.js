@@ -1,17 +1,19 @@
 import * as dotenv from 'dotenv'
 dotenv.config()
-import { Alchemy, Utils } from "alchemy-sdk";
+import { Utils } from "alchemy-sdk";
 import { networks } from './config.js';
+import { AlchemyMultichainClient } from './alchemy-multichain-client.js'
 import fetch from 'node-fetch';
 
-const chain = "goerli"
+const chains = process.env.NODE_ENV !== 'production' ? ["goerli", "mumbai"] : ["eth", "polygon"]
 
-const settings = {
+const defaultConfig = {
     apiKey: process.env.ALCHEMY_API_KEY,
-    network: networks[chain],
-};
+    network: networks['eth'],
+}
 
-const alchemy = new Alchemy(settings);
+const overrides = chains.map(chain => ({ [networks[chain]]: { apiKey: process.env.ALCHEMY_API_KEY } }))
+const alchemy = new AlchemyMultichainClient(defaultConfig, overrides)
 
 const contractCreationInstance = "OwnershipTransferred(address,address)"
 const ERC721ContractTransferInstance = "Transfer(address,address,uint256)"
@@ -30,7 +32,7 @@ const ERC1155ContractTransferSingleEvents = {
     topics: [Utils.id(ERC1155ContractTransferSingleInstance)],
 };
 
-const doSomethingWithTxn = (txn, standard, event_type) => {
+const doSomethingWithTxn = (txn, standard, event_type, chain) => {
     const transaction_hash = txn.transactionHash
 
     const body = { standard, event_type, chain, transaction_hash };
@@ -53,6 +55,8 @@ const doSomethingWithTxn = (txn, standard, event_type) => {
 
 };
 
-alchemy.ws.on(contractCreationEvents, (txn) => doSomethingWithTxn(txn, "", "creation"));
-alchemy.ws.on(ERC721ContractTransferEvents, (txn) => doSomethingWithTxn(txn, "ERC721", "transfer"));
-alchemy.ws.on(ERC1155ContractTransferSingleEvents, (txn) => doSomethingWithTxn(txn, "ERC1155", "transfer"));
+chains.forEach(chain => {
+    alchemy.forNetwork(networks[chain]).ws.on(contractCreationEvents, (txn) => doSomethingWithTxn(txn, "", "creation", chain));
+    alchemy.forNetwork(networks[chain]).ws.on(ERC721ContractTransferEvents, (txn) => doSomethingWithTxn(txn, "ERC721", "transfer", chain));
+    alchemy.forNetwork(networks[chain]).ws.on(ERC1155ContractTransferSingleEvents, (txn) => doSomethingWithTxn(txn, "ERC1155", "transfer", chain));
+})
